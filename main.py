@@ -6,10 +6,12 @@ import torch.nn.functional as F
 import os
 
 from model import FNCModel
+
 from data import FNCDataset
 from data import pipeline_train, pipeline_test
 
 from config import lim_unigram
+from config import dropout
 from config import batch_size
 from config import learning_rate
 from config import weight_decay
@@ -33,7 +35,7 @@ if __name__ == '__main__':
     # 3、实例化数据加载器、模型、优化器等
     train_data_loader = DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
     test_data_loader = DataLoader(dataset=test_dataset, batch_size=1, shuffle=False)
-    model = FNCModel()
+    model = FNCModel(2 * lim_unigram + 1, dropout)
     model.double()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay) # 根据API，已经有L2正则化了
 
@@ -47,21 +49,22 @@ if __name__ == '__main__':
             loss = F.nll_loss(output, label)
             loss.backward()
             optimizer.step()
-            if index % 100 == 0:
+            if index % 10 == 0:
                 print('第{}次，loss: {}'.format(index, loss.item()))
 
     # 5、test
     model.eval()
     results = []
-    for index, (text, label, prev_text, prev_label) in enumerate(test_data_loader):
+    for text, label, prev_text, prev_label in test_data_loader:
         with torch.no_grad():
             output = model(text)
             predict = output.max(dim=-1)[-1].item()
             predict = label_ref_rev[predict]
-            result = {}
-            result['Headline'] = prev_text[0]
-            result['Body ID'] = prev_text[2].item()
-            result['Stance'] = predict
+            result = {
+                'Headline': prev_text[0][0],
+                'Body ID': prev_text[2].item(),
+                'Stance': predict
+            }
             results.append(result)
 
     # 6、保存结果
