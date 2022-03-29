@@ -43,7 +43,7 @@ dropout = 0.6
 
 batch_size = 500
 
-learning_rate = 0.005
+learning_rate = 0.01
 
 weight_decay = 0.0001
 
