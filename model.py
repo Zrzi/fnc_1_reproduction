@@ -16,4 +16,3 @@ class FNCModel(nn.Module):
     def forward(self, x):
         output = self.layers(x)
         return F.log_softmax(output)
-

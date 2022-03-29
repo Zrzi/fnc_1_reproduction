@@ -4,8 +4,8 @@
 data_base_path = 'D:\\PythonWorkSpace\\fake_news\\fnc-1'
 
 # 标签于数值转换
-label_ref = {'agree': 0, 'disagree': 1, 'discuss': 2, 'unrelated': 3}
-label_ref_rev = {0: 'agree', 1: 'disagree', 2: 'discuss', 3: 'unrelated'}
+label_ref = {'unrelated': 0, 'discuss': 1, 'agree': 2, 'disagree': 3}
+label_ref_rev = {0: 'unrelated', 1: 'discuss', 2: 'agree', 3: 'disagree'}
 
 # 停用词
 stop_words = [
@@ -43,7 +43,7 @@ dropout = 0.6
 
 batch_size = 500
 
-learning_rate = 0.01
+learning_rate = 0.005
 
 weight_decay = 0.0001
 
