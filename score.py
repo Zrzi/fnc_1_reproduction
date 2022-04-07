@@ -7,6 +7,26 @@ from csv import DictReader
 from config import data_base_path
 from config import label_ref, label_ref_rev
 
+
+def print_confusion_matrix(matrix):
+    labels = ['unrelated', 'discuss', 'agree', 'disagree']
+    lines = ['CONFUSION MATRIX:']
+    header = "|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|".format('', *labels, 'overall')
+    line_len = len(header)
+    lines.append("-"*line_len)
+    lines.append(header)
+    lines.append("-"*line_len)
+
+    hit = 0
+    total = 0
+    for i, row in enumerate(matrix):
+        hit += row[i]
+        total += sum(row)
+        lines.append("|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|{:^11}|".format(labels[i], *row, sum(row)))
+        lines.append("-"*line_len)
+    print('\n'.join(lines))
+
+
 if __name__ == '__main__':
     # 保存的结果文件地址
     predict_file_path = os.path.join(data_base_path, 'prediction.csv')
@@ -15,15 +35,28 @@ if __name__ == '__main__':
 
     correct = 0
     total = 0
+    score = 0.0
     confusion_matrix = np.zeros(shape=(4, 4), dtype=np.int)
 
     labels_dict = {}
 
+    related = ['discuss', 'agree', 'disagree']
+
+    max_score = 0.0
+    null_score = 0.0
+
     with open(label_file_path, 'r', encoding='utf-8') as table:
         lines = DictReader(table)
+        unrelated_count = 0
+        total_count = 0
         for line in lines:
             line = dict(line)
             labels_dict[line['Headline'], line['Body ID']] = line['Stance']
+            if line['Stance'] == 'unrelated':
+                unrelated_count = unrelated_count + 1
+            total_count = total_count + 1
+        null_score = 0.25 * unrelated_count
+        max_score = null_score + total_count - unrelated_count
 
     with open(predict_file_path, 'r', encoding='utf-8') as table:
         lines = DictReader(table)
@@ -31,23 +64,20 @@ if __name__ == '__main__':
             line = dict(line)
             predict = line['Stance']
             label = labels_dict[line['Headline'], line['Body ID']]
+
             if label == predict:
                 correct += 1
+                score += 0.25
+                if label != 'unrelated':
+                    score += 0.50
+
+            if label in related and predict in related:
+                score += 0.25
+
             total += 1
             confusion_matrix[label_ref[predict], label_ref[label]] += 1
 
-    # with open(label_file_path, 'r', encoding='utf-8') as f1, open(predict_file_path, 'r', encoding='utf-8') as f2:
-    #     labels = DictReader(f1)
-    #     predicts = DictReader(f2)
-    #     for label, predict in zip(labels, predicts):
-    #         label = dict(label)['Stance']
-    #         predict = dict(predict)['Stance']
-    #         if label == predict:
-    #             correct += 1
-    #         total += 1
-    #         confusion_matrix[label_ref[label], label_ref[predict]] += 1
-
-    print(confusion_matrix)
+    print_confusion_matrix(matrix=confusion_matrix)
 
     print()
 
@@ -66,3 +96,7 @@ if __name__ == '__main__':
     print()
 
     print("总共{}个数据，正确{}个数据，正确率为{:.4f}".format(total, correct, 1.0 * correct / total))
+
+    print()
+
+    print('fnc-1 score: {}, fnc-1 relative score: {:.2f}'.format(score, score / max_score))
